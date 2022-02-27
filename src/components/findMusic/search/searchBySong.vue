@@ -10,15 +10,15 @@
       @row-dblclick="playMusic"
     >
       >
-      <el-table-column lable="#" type="index">
+      <el-table-column lable="#" type="index" :span="1">
         <template scope="scope">
-          <img v-if="true" src="img/isPlay.png" alt="" />
+          <img v-if="scope.row.id === curId" src="img/isPlay.png" alt="" />
           <p v-else>{{ scope.$index + 1 }}</p>
         </template>
       </el-table-column>
       <!-- <el-table-column v-if="false" label="id" prop="id"></el-table-column> -->
-      <el-table-column label="音乐标题" prop="name"></el-table-column>
-      <el-table-column label="歌手" width="150px">
+      <el-table-column label="音乐标题" :span="4" prop="name"></el-table-column>
+      <el-table-column label="歌手" :span="2">
         <template scope="scope">
           <span
             v-for="(item, index) in scope.row.artists"
@@ -36,12 +36,12 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="专辑名" prop="album.name"></el-table-column>
       <el-table-column
-        label="时长"
-        prop="druation"
-        width="80px"
+        label="专辑名"
+        prop="album.name"
+        :span="2"
       ></el-table-column>
+      <el-table-column label="时长" prop="druation" :span="1"></el-table-column>
     </el-table>
 
     <!-- 分页 -->
@@ -74,8 +74,19 @@ export default {
       curId: parseInt(window.localStorage.getItem("curPlayMusicId")),
     };
   },
+  beforeRouteEnter(from,to,next) {
+    //这里读不到this,使用下面的vm
+    next(vm=>vm.getSearchResult());
+    console.log("router");
+  },
+  // beforeRouteUpdate(from,to,next){
+  //   this.getSearchResult();
+  //   console.log("router update");
+  //   next()
+  // },
   created() {
-    this.getSearchResult();
+    //不能在这里开,因为出来再进去就不会执行
+    // this.getSearchResult();
     // console.log("created");
     // console.log(this.$route.params.data);
   },
@@ -110,16 +121,17 @@ export default {
           });
         });
     },
-    async playMusic(row,col,event) {
-      console.log(row,col,event);
-      let {data:res}=await this.$axios.get("/song/url?id="+row.id);
-      // console.log(res);
-      console.log(this.$parent,"已发送")
-      this.$parent.$parent.$parent.setMusicUrl(res.data[0].url,res.data[0].url);
-      console.log(this.$parent,"已发送")
+    playMusic(row, col, event) {
+      // console.log(row,col,event);
+      this.curId = row.id;
+      console.log(this.$parent.$parent.$parent);
+      this.$parent.$parent.$parent.setMusicUrl(this.curId);
+      this.$router.push("/songdetail/" + row.id);
+
+      // console.log(this.$parent,"已发送")
     },
     handleCurrentChange(e) {},
-    toSingerPage(){},
+    toSingerPage() {},
   },
 };
 </script>

@@ -17,13 +17,16 @@
           class="searchBtn"
           size="mini"
           @click="toSearchPage"
-          
         ></el-button>
       </el-input>
       <!-- 右侧登录区域 -->
       <div class="rightContainer" style="display: flex">
         <!-- 短路表达式 -->
-        <img :src="currentInfo.avatarUrl ||'img/userIcon.png'" class="userIcon" alt="this is avatar" />
+        <img
+          :src="currentInfo.avatarUrl || 'img/userIcon.png'"
+          class="userIcon"
+          alt="this is avatar"
+        />
         <span
           v-if="currentUserInfo === null"
           style="cursor: pointer"
@@ -62,7 +65,7 @@
               index
               :index="'/songlist/' + item.id"
               @click="changePlaylistId(item.id)"
-              v-for="(item, index) in currentUserPlayList"
+              v-for="item in currentUserPlayList"
               v-if="!item.subscribed"
               >{{ item.name }}
             </el-menu-item>
@@ -86,19 +89,25 @@
     </el-container>
     <!-- 播放器 -->
     <el-footer
-      style="position:fixed;bottom:0;width:100%;z-index:100;height:150px;" 
+      style="
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        z-index: 100;
+        height: 150px;
+      "
     >
       <el-row style="width: 209px; background-color: white">
         <el-col :span="8">
           <img
-            src="img/phone.png" 
+            src="img/phone.png"
             @click="tomusicDetailPage"
             alt="musiccover"
-            style="width: 60px; height: 63px; cursor: pointer;"
+            style="width: 60px; height: 63px; cursor: pointer"
           />
         </el-col>
         <el-col :span="16">
-          <p style="height:8px; font-size:10px;">{{ music.name }}</p>
+          <p style="height: 8px; font-size: 10px">{{ music.name }}</p>
           <br />
           <span style="color: gray; font-size: 10px">{{
             music.ar[0].name
@@ -107,7 +116,11 @@
       </el-row>
 
       <el-row
-        style="margin-top: 10px;border-top:1px solid rgb(230,230,230) ;background-color:white;"
+        style="
+          margin-top: 10px;
+          border-top: 1px solid rgb(230, 230, 230);
+          background-color: white;
+        "
       >
         <el-col :span="2.5">
           <!-- ← -->
@@ -115,7 +128,7 @@
             src="img/prev.png"
             alt="prev"
             @click="changePrevMusic"
-            style="border-radius: 100%; cursor: pointer;"
+            style="border-radius: 100%; cursor: pointer"
           />
           <img
             :src="isPlay ? 'img/pauseMusic.png' : 'img/playMusic.png'"
@@ -137,7 +150,7 @@
           />
         </el-col>
         <el-col :span="15" :offset="1">
-          <span style="position:absolute;top:9px;">{{
+          <span style="position: absolute; top: 9px">{{
             this.musicDuration | timeFormat
           }}</span>
           <el-slider
@@ -146,7 +159,7 @@
             @change="musicDurationChange"
             :show-tooltip="false"
           ></el-slider>
-          <span style="position: absolute; left: 73%; top:9px;">{{
+          <span style="position: absolute; left: 73%; top: 9px">{{
             totalDuration | timeFormat
           }}</span>
         </el-col>
@@ -162,13 +175,12 @@
             src="img/songList.png"
             alt="listpic"
             @click="showCurrentPlayList"
-            style="position: absolute; top: -30px; right: 5%; cursor: pointer;"
+            style="position: absolute; top: -30px; right: 5%; cursor: pointer"
           />
           <el-slider
-            
             v-model="musicVolume"
             :show-tooltip="false"
-            style="width: 30%;"
+            style="width: 30%"
             @change="musicVolumeChange"
           ></el-slider>
         </el-col>
@@ -212,7 +224,7 @@
 </template>
 
 <script>
-import searchPage from "./findMusic/search/searchPage"
+import searchPage from "./findMusic/search/searchPage";
 export default {
   name: "Main",
   props: {
@@ -221,6 +233,7 @@ export default {
   data() {
     return {
       //当前音乐链接
+      audio: null,
       musicUrl: "",
       //当前音乐详情
       music: {
@@ -234,6 +247,7 @@ export default {
           },
         ],
       },
+      musicinfo: null,
       // 当前音乐进度条
       musicDuration: 0,
       totalDuration: 0,
@@ -243,9 +257,10 @@ export default {
       curId: 0,
       // 默认是否播放
       isPlay: false,
-      playListInfo: (window.localStorage.getItem("playList")&&window.localStorage.getItem("playList").split(","))||[],
-      //当前播放歌单的所有歌曲url和其他信息
-      currentMusicListInfo: [],
+      playListInfo:
+        (window.localStorage.getItem("playList") &&
+          window.localStorage.getItem("playList").split(",")) ||
+        [],
       //当前播放的歌单的id
       songListInfo: [],
       //展示右边鹅蛋的对话框
@@ -254,11 +269,14 @@ export default {
       loginDailogVisible: false,
       loginInfo: {},
       //当前用户歌单
-      currentUserPlayList: [],
+      currentMusicIndex:-1,//当前播放音乐在playlist中位置
+      currentUserPlayList: [], //id
+      //当前播放歌单的所有歌曲url和其他信息
+      currentMusicListInfo: [],
       //搜索关键字
       searchData: "",
-      currentInfo:"",
-      currentUserInfo:"",
+      currentInfo: "",
+      currentUserInfo: "",
     };
   },
   watch: {
@@ -272,43 +290,76 @@ export default {
       this.getUserPrivatePlayList();
     }
   },
+  mounted() {
+    this.audio = this.$refs.audio;
+    // console.log(this.audio);
+  },
   methods: {
     //设置当前播放url
-    setMusicUrl(mUrl, detail) {
-      //社会之音乐链接和歌曲信息
-      this.musicUrl = mUrl;
-      // this.music = detail;
-      this.curId = detail.id;
-      //轮播图传来的歌曲id放到歌单
-      this.playListInfo.push(detail.id);
-      this.setAudioTagsInfo();
+    // setMusicUrl(mUrl, detail) {
+    //   //社会之音乐链接和歌曲信息
+    //   this.musicUrl = mUrl;
+    //   // this.music = detail;
+    //   this.curId = detail.id;
+    //   //轮播图传来的歌曲id放到歌单
+    //   this.playListInfo.push(detail.id);
+    //   this.setAudioTagsInfo();
+    // },
+    /*
+    param@ musicInfo{
+      id:id, musicid
+      ....
+    }
+    设置单个音乐url
+    */
+    async setMusicUrl(musicId) {
+      this.curID = musicId;
+      console.log("main",this.curId);
+      //当前用户音乐列表只存id
+      // this.currentUserPlayList.push(this.curId);
+      let {data:res}=await this.$axios.get("/song/url?id="+musicId);
+      // console.log(res.data.result);
+      this.setAudioTagsInfo(res.data[0].url);
     },
-    setAudioTagsInfo() {
-      let audio = this.$refs.audio;
-      audio.src=this.musicUrl;
-      
-      audio.addEventListener("timeupdate", () => {
-        this.totalDuration = audio.duration;
-        this.musicDuration = audio.currentTime;
-        if (audio.currentTime >= audio.duration) {
+    setAudioTagsInfo(musicUrl) {
+      console.log(musicUrl);
+      if (this.audio === null) this.$message("error(Can not find audio)");
+      this.musicUrl = musicUrl;
+      this.audio.addEventListener("timeupdate", () => {
+        this.totalDuration = this.audio.duration;
+        this.musicDuration = this.audio.currentTime;
+        if (this.audio.currentTime >= this.audio.duration) {
           this.changeNextMusic();
         }
       });
-      
+      //设置url后,自动播放,所以直接置为true
       this.isPlay = true;
+    },
+    /*
+    params:@ playList Array
+    params:@ albumId number
+    */
+    async setSongListInfo(playList) {
+      console.log(playList);
+      this.currentMusicIndex=0;
+      this.currentUserPlayList = playList;
+      let { data: res } = await this.$axios.get(
+        "/song/url?id=" + this.currentUserPlayList
+      );
+      this.currentMusicListInfo = res.data;
+      this.setAudioTagsInfo(this.currentMusicListInfo[0].url);
     },
     musicDurationChange() {
       if (this.totalDuration === 0) return;
-      let audio = this.$refs.audio;
-      audio.currentTime = this.musicDuration;
+      this.audio.currentTime = this.musicDuration;
     },
     musicVolumeChange() {
       this.volumeChange(this.musicVolume / 100);
     },
     volumeChange(sum) {
-      let audio = this.$refs.audio;
-      audio.volume = sum;
+      this.audio.volume = sum;
     },
+    //这里可以改计算属性
     silence() {
       if (this.musicVolume !== 0) {
         this.volumeChange(0);
@@ -319,58 +370,53 @@ export default {
       }
     },
     playMusic() {
-      let audio = this.$refs.audio;
       if (this.musicUrl !== "") {
-        if (audio.paused) {
-          audio.play();
+        if (this.audio.paused) {
+          this.audio.play();
         } else {
-          audio.pause();
+          this.audio.pause();
         }
+        this.isPlay = !this.isPlay;
       }
-      this.isPlay = !this.isPlay;
     },
     changeNextMusic() {
-      const nextOne =
-        this.playListInfo[
-          this.playListInfo.findIndex((target) => {
-            return target === this.curId;
-          }) + 1
-        ];
-      this.setSongListInfo(this.playListInfo, nextOne);
+      // this.isPlay=false;
+      if(this.currentMusicListInfo.length===0) return ;
+      this.currentMusicIndex=(this.currentMusicIndex+1)%this.currentMusicListInfo.length;
+      // console.log(this.currentMusicListInfo);
+      this.setAudioTagsInfo(this.currentMusicListInfo[this.currentMusicIndex].url);
+      this.curId=this.currentMusicListInfo[this.currentMusicIndex].id;
+      console.log("next music");
     },
     changePrevMusic() {
-      const prevOne =
-        this.playListInfo[
-          this.playListInfo.findIndex((target) => {
-            return target === this.curId;
-          }) - 1
-        ];
-      this.setSongListInfo(this.playListInfo, prevOne);
+      this.currentMusicIndex=(this.currentMusicIndex+this.currentMusicListInfo.length-1)%this.currentMusicListInfo.length;
+      console.log(this.currentMusicListInfo);
+      this.setAudioTagsInfo(this.currentMusicListInfo[this.currentMusicIndex].url);
+      this.curId=this.currentMusicListInfo[this.currentMusicIndex].id;
+      console.log("last music");
     },
     //获得searchData,使用$router去搜索页
     toSearchPage() {
-      let value=this.searchData.trim();
-      if(value===''){
+      let value = this.searchData.trim();
+      if (value === "") {
         return this.$message("未输入信息");
       }
       console.log(this.searchData);
-      this.$router.push("/search/"+encodeURIComponent(this.searchData));
+      this.$router.push("/search/" + encodeURIComponent(this.searchData));
       // this.testAxios();
+      this.$refs.childe&&this.$refs.child.toSingSearchPage();
       console.log("goto");
-
     },
-    async testAxios(){
-
-      let {data:res}=await this.$axios.get("/song/url?id=233931");
-      res=res.data[0];
-      this.setMusicUrl(res.url,res);
-      
+    async testAxios() {
+      let { data: res } = await this.$axios.get("/song/url?id=233931");
+      res = res.data[0];
+      this.setMusicUrl(res.url, res);
     },
-    logout(){},
-    getUserPrivateList(){},
-    setSongListInfo(){},
-    tomusicDetailPage(){},
-    showCurrentPlayList(){},
+    logout() {},
+    getUserPrivateList() {},
+
+    tomusicDetailPage() {},
+    showCurrentPlayList() {},
   },
 };
 </script>
@@ -396,66 +442,66 @@ export default {
     margin-top: 15px;
     color: white;
   }
-  .el-input{
-    width:275px;
+  .el-input {
+    width: 275px;
   }
-  /deep/ .el-input__inner{
-    opacity:0.4;
-    margin-top:15px;
-    margin-left:50px;
-    width:225px;
-    height:25px;
-    border-radius:12px;
+  /deep/ .el-input__inner {
+    opacity: 0.4;
+    margin-top: 15px;
+    margin-left: 50px;
+    width: 225px;
+    height: 25px;
+    border-radius: 12px;
   }
-  .searchBtn{
-    opacity:0;
-    position:absolute;
-    float:right;
-    width:1px;
-    height:24px;
-    left:-3px;
-    margin-top:15px !important;
+  .searchBtn {
+    opacity: 0;
+    position: absolute;
+    float: right;
+    width: 1px;
+    height: 24px;
+    left: -3px;
+    margin-top: 15px !important;
     border-radius: 60%;
   }
-  .rightContainer{
-    margin-left:auto ;
-    span{
-      font-size:17px;
-      color:white;
+  .rightContainer {
+    margin-left: auto;
+    span {
+      font-size: 17px;
+      color: white;
     }
 
-    .userIcon{
-      width:30px;
-      height:30px;
-      border-radius:60%;
-      margin-top:13px;
-      margin-right:10px;
+    .userIcon {
+      width: 30px;
+      height: 30px;
+      border-radius: 60%;
+      margin-top: 13px;
+      margin-right: 10px;
     }
   }
 }
 
-/deep/ .el-menu-item-group__title{
-  padding-left:5px !important;
-  margin-top:7px;
+/deep/ .el-menu-item-group__title {
+  padding-left: 5px !important;
+  margin-top: 7px;
 }
-.el-menu-item{
-  height:45px;
-  line-height:3.45em;
+.el-menu-item {
+  height: 45px;
+  line-height: 3.45em;
 }
-.el-menu-item.is-active{
-  color:black;
-  border-left:2px solid red !important;
+.el-menu-item.is-active {
+  color: black;
+  border-left: 2px solid red !important;
 }
-.el-menu{
-  height:90%;
+.el-menu {
+  height: 90%;
 }
 .el-card.is-always-shadow,
 .el-card.is-hover-shadow:focus,
-.el-card.is-hover-shadow:hover{
-  box-shadow: 0 0 0 0 ;
+.el-card.is-hover-shadow:hover {
+  box-shadow: 0 0 0 0;
 }
-/deep/ .el-slider__button{
-  border:2px solid rgb(198,47,47) !important;
+/deep/ .el-slider__button {
+  border: 2px solid rgb(198, 47, 47) !important;
 }
 
 /deep/ .el-slider__button {

@@ -10,3 +10,4 @@ vuex
 router
 slot
 正则
+axios封装

@@ -41,10 +41,12 @@ export default {
   methods:{
     async getSingerResult(){
       let {data:res}=await this.$axios.get('/search/',{params:this.queryInfo});
+      console.log(res);
       this.singerList=res.result.artists;
-      this.singerTotal=res.data.result.artistCount;
+      this.singerTotal=res.result.artistCount;
     },
     toSingerPage(id){
+      console.log("tosingerpage");
       this.$router.push('/singer/'+id);
     },
     handleCurrentChange(newpage){

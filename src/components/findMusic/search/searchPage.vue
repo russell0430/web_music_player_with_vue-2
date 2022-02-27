@@ -26,7 +26,7 @@ export default {
   methods:{
     toSingSearchPage(){
       this.searchData=this.$route.params.data;
-      const href=window.location.href;
+      const href=location.href;
       if(href.substring(href.indexOf('#/')+1,href.length)==='/search/'+encodeURIComponent(this.$route.params.data)){
         this.$router.push('/searchBySong/' + decodeURIComponent(this.$route.params.data));
       }

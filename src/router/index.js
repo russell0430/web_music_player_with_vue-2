@@ -8,6 +8,11 @@ import searchBySong from "../components/findMusic/search/searchBySong.vue"
 import searchBySinger from "../components/findMusic/search/searchBySinger.vue"
 import searchByPlayList from "../components/findMusic/search/searchByPlayList.vue"
 
+
+import singerDetail from "../components/singer/singerDetail.vue"
+import singerAlbum from "../components/singer/singerAlbum.vue"
+
+import playSongDetail from "../components/playMusicPage/playMusicDetailPage.vue"
 Vue.use(VueRouter)
 
 const routes = [
@@ -15,6 +20,7 @@ const routes = [
     path: '/',
     name: 'Main',
     component: Main,
+    // redirect:"/songdetail/:data",
     children: [
       {
         path: "/search/:data",
@@ -25,15 +31,30 @@ const routes = [
             component: searchBySong,
           },
           {
-            path:"/searchBySinger/:data",
-            component:searchBySinger,
+            path: "/searchBySinger/:data",
+            component: searchBySinger,
           },
           {
-            path:"/searchByPlayList/:data",
-            component:searchByPlayList,
+            path: "/searchByPlayList/:data",
+            component: searchByPlayList,
           }
         ]
-      }
+      },
+      {
+        path: "/singer/:data",
+        component: singerDetail,
+        redirect:"/album/:data",
+        children: [
+          {
+            path: "/album/:data",
+            component: singerAlbum,
+          }
+        ]
+      },
+      {
+        path: "/songdetail/:data",
+        component: playSongDetail,
+      },
     ]
   },
 ]
