@@ -11,6 +11,7 @@ Vue.config.productionTip = false
 
 Vue.prototype.$axios=axios
 axios.defaults.baseURL = 'http://localhost:4000/' 
+
 //全局vue过滤器(时间戳过滤器)
 Vue.filter('dateFormat',function (originVal) {
   const dt = new Date(originVal)

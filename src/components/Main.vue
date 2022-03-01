@@ -77,7 +77,7 @@
         <el-main>
           <router-view
             ref="child"
-            @setMusicUrl="setMusicUrl"
+            @setMusicById="setMusic"
             :musicDuration="musicDuration"
             @refreshprivatePlaylist="getUserPrivateList"
             :isPlay="isPlay"
@@ -225,6 +225,7 @@
 
 <script>
 import searchPage from "./findMusic/search/searchPage";
+import {getSongById} from "../utils/api.js"
 export default {
   name: "Main",
   props: {
@@ -255,6 +256,7 @@ export default {
       musicVolume: 20,
       // 当前音乐编号
       curId: 0,
+      currentReadyId:-1,
       // 默认是否播放
       isPlay: false,
       playListInfo:
@@ -285,7 +287,7 @@ export default {
     // },
   },
   created() {
-    // this.testAxios();
+    this.testAxios();
     if (false) {
       this.getUserPrivatePlayList();
     }
@@ -295,16 +297,10 @@ export default {
     // console.log(this.audio);
   },
   methods: {
-    //设置当前播放url
-    // setMusicUrl(mUrl, detail) {
-    //   //社会之音乐链接和歌曲信息
-    //   this.musicUrl = mUrl;
-    //   // this.music = detail;
-    //   this.curId = detail.id;
-    //   //轮播图传来的歌曲id放到歌单
-    //   this.playListInfo.push(detail.id);
-    //   this.setAudioTagsInfo();
-    // },
+    setMusic(musicId){
+      this.currentReadyId=musicId;
+      this.setMusicById(musicId);
+    },
     /*
     param@ musicInfo{
       id:id, musicid
@@ -312,14 +308,15 @@ export default {
     }
     设置单个音乐url
     */
-    async setMusicUrl(musicId) {
-      this.curID = musicId;
+
+    async setMusicById(musicId) {
+      this.curId = musicId;
       console.log("main",this.curId);
       //当前用户音乐列表只存id
       // this.currentUserPlayList.push(this.curId);
-      let {data:res}=await this.$axios.get("/song/url?id="+musicId);
+      let response=await getSongById(musicId);
       // console.log(res.data.result);
-      this.setAudioTagsInfo(res.data[0].url);
+      this.setAudioTagsInfo(response.data[0].url);
     },
     setAudioTagsInfo(musicUrl) {
       console.log(musicUrl);
@@ -343,9 +340,7 @@ export default {
       console.log(playList);
       this.currentMusicIndex=0;
       this.currentUserPlayList = playList;
-      let { data: res } = await this.$axios.get(
-        "/song/url?id=" + this.currentUserPlayList
-      );
+      let res=await getSongById(this.currentUserPlayList);
       this.currentMusicListInfo = res.data;
       this.setAudioTagsInfo(this.currentMusicListInfo[0].url);
     },
@@ -370,6 +365,11 @@ export default {
       }
     },
     playMusic() {
+      if(this.currentReadyId){
+        this.setMusicById(this.currentReadyId);
+        this.currentReadyId=0;
+        return ;
+      }
       if (this.musicUrl !== "") {
         if (this.audio.paused) {
           this.audio.play();
@@ -403,14 +403,12 @@ export default {
       }
       console.log(this.searchData);
       this.$router.push("/search/" + encodeURIComponent(this.searchData));
-      // this.testAxios();
       this.$refs.childe&&this.$refs.child.toSingSearchPage();
       console.log("goto");
     },
     async testAxios() {
-      let { data: res } = await this.$axios.get("/song/url?id=233931");
-      res = res.data[0];
-      this.setMusicUrl(res.url, res);
+      let res=await getSongById(1920784999);
+      console.log(res);
     },
     logout() {},
     getUserPrivateList() {},

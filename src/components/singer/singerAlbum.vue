@@ -52,6 +52,7 @@
 </template>
 
 <script>
+import {getTopSong} from "../../utils/api.js"
 export default {
   data() {
     return {
@@ -81,22 +82,16 @@ export default {
     // console.log(this.hot50Songs);
   },
   methods: {
-    getHot50Music() {
-      this.$axios
-        .get("/artist/top/song", { params: { id: this.singerId } })
-        .then((res) => {
-          this.hot50Songs = res.data.songs;
-          //
-          this.hot50Songs.forEach((item) => {
+    async getHot50Music() {
+      let res=await getTopSong(this.singerId,20);
+      this.hot50Songs=res.songs;
+      this.hot50Songs.forEach((item) => {
             const dt = new Date(item.dt);
             const mm = (dt.getMinutes() + "").padStart(2, "0");
             const ss = (dt.getSeconds() + "").padStart(2, "0");
             item.dt = mm + ":" + ss;
           });
-          this.hot10Songs = this.hot50Songs.slice(0, 10);
-          console.log(this.hot50Songs);
-        })
-        .catch((err) => console.log(err));
+      this.hot10Songs = this.hot50Songs.slice(0, 10);
     },
     changeDefaultNum() {
       //将show取消

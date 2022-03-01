@@ -2,23 +2,38 @@
   <div>
     <el-row class="topInfo">
       <img src="" alt="" />
-      <el-col :span="6">
-        <el-image src="img/play-bar.png"></el-image>
-        <el-image src="img/play-bar-middle.png"></el-image>
-        <!-- 播放歌曲图片 -->
-        <img
-          :src="music.al.picUrl || ''"
-          :class="['musicPoster', isPlay ? 'posterRotate' : '']"
-          alt=""
-          ref="musicPoster"
-        />
+      <el-col :span="6" >
+        <el-image src="img/play-bar.png" :class="['play-bar',isPlay?'':'barRotate']"></el-image>
+        <span class="picContainer">
+          <el-image
+            src="img/play-bar-middle.png"
+            class="play-bar-middle"
+          ></el-image>
+          <!-- 播放歌曲图片 -->
+          <el-image
+            :src="music.al.picUrl || ''"
+            :class="['musicPoster', isPlay ? 'posterRotate' : '']"
+            ref="musicPoster"
+          ></el-image>
+        </span>
       </el-col>
-      <el-col :span="6" :offset="6" >
+      <el-col :span="6" :offset="12">
         <h1 style>{{ music.name }}</h1>
-        <span>专辑:<span style="color: #4d99de;cursor: pointer" @click="toAlbumPage(music.al.id)"> {{ music.al.name }}</span></span>
         <span
-          >  |歌手:
-          <span style="color: #4d99de;cursor: pointer" @click="toSingerPage(music.ar[0].id)">{{music.ar[0].name}}</span>
+          >专辑:<span
+            style="color: #4d99de; cursor: pointer"
+            @click="toAlbumPage(music.al.id)"
+          >
+            {{ music.al.name }}</span
+          ></span
+        >
+        <span>
+          |歌手:
+          <span
+            style="color: #4d99de; cursor: pointer"
+            @click="toSingerPage(music.ar[0].id)"
+            >{{ music.ar[0].name }}</span
+          >
         </span>
         <!-- 歌词 -->
         <div
@@ -63,10 +78,11 @@
 </template>
 
 <script>
+import { getLyricById, getSongDetail } from "../../utils/api.js";
 export default {
   data() {
     return {
-      curId: this.$route.params.data,
+      pageId: this.$route.params.data,
       music: {
         name: "",
         al: {
@@ -98,14 +114,20 @@ export default {
   },
   props: [
     "musicDuration",
-    // 'curId',
+    'curId',
     "isPlay",
   ],
   created() {
+    // console.log("created","curId",this.curId);
     this.getMusicDetail();
     this.getMusicLrc();
+    this.readyPlaySong(this.pageId);
     // window.addEventListener
-    this.getMusicComment();
+    // this.getMusicComment();
+
+  },
+  beforeRouteUpdate(to, from, next) {
+    console.log("playdetail", to, from);
   },
   mounted() {
     if (this.play) {
@@ -115,16 +137,16 @@ export default {
   },
   watch: {
     musicDuration(newVal) {
-      console.log(newVal,this.lyricIndex);
-      if(!this.isPlay) return ;
+      console.log(newVal, this.lyricIndex);
+      if (!this.isPlay) return;
       this.duration = newVal;
       //对每次进来的进度条进行判断
       // 跟下一句台词时长是否匹配,如果匹配则当前高亮的索引值+1
       //使用循环帮助****回退  快进****的判断
-      let lrcArray=this.lyricObejct.ms;
+      let lrcArray = this.lyricObejct.ms;
       for (let i = 0; i < lrcArray.length; i++) {
         //这里使用小于符号判断是为了 保证回退音乐进度事件的效果实现性
-        if (newVal <= parseFloat(lrcArray[i].time)) { 
+        if (newVal <= parseFloat(lrcArray[i].time)) {
           if (this.lyricIndex === i - 1) {
             break;
           }
@@ -161,25 +183,21 @@ export default {
       }
     },
   },
-  beforeRouteLeave(to, from, next) {
-    clearInterval(this.rotate);
-    this.rotate = null;
-    next();
-  },
   methods: {
-    getMusicDetail() {
-      this.$axios
-        .get("/song/detail", { params: { ids: this.curId } })
-        .then((res) => {
-          // console.log(res.data)
-          this.music = res.data.songs[0];
-        });
+    readyPlaySong(){
+      //播放当前页面歌曲
+      this.$emit('setMusicById',this.pageId);
+      console.log(this.pageId);
     },
-    getMusicLrc() {
-      this.$axios.get("lyric", { params: { id: this.curId } }).then((res) => {
-        this.lrc = res.data.lrc.lyric;
-        this.createLrcObject(this.lrc);
-      });
+    async getMusicDetail() {
+      let res = await getSongDetail(this.pageId);
+      // console.log(res);
+      this.music = res.songs[0];
+    },
+    async getMusicLrc() {
+      let res = await getLyricById(this.pageId);
+      this.lrc = res.lrc.lyric;
+      this.createLrcObject(this.lrc);
     },
     //lrc是字符串
     createLrcObject(lrc) {
@@ -202,16 +220,14 @@ export default {
     toSingerPage(id) {
       this.$router.push("/singer/" + id);
     },
-    toAlbumPage(){
-
-    },
+    toAlbumPage() {},
     getMusicComment() {
-      this.$axios
-        .get("/comment/music", { params: this.queryInfo })
-        .then((res) => {
-          this.commentList = res.data.comments;
-          this.total = res.data.total;
-        });
+      // this.$axios
+      //   .get("/comment/music", { params: this.queryInfo })
+      //   .then((res) => {
+      //     this.commentList = res.data.comments;
+      //     this.total = res.data.total;
+      //   });
     },
     handleCurrentChange(newpage) {},
   },
@@ -219,16 +235,36 @@ export default {
 </script>
 
 <style lang="less" scoped>
+.picContainer {
+  display: flex;
+  position:absolute;
+  top:150px;
+  left:100px;
+  justify-content: center;
+}
+.play-bar {
+  position:absolute;
+  height: 300px;
+  width: 200px;
+  
+}
+.play-bar-middle {
+  top:125px;
+  position:absolute;
+  height: 50px;
+  width: 50px;
+}
 .musicPoster {
-  position: absolute;
   border: 45px solid black;
   border-radius: 50%;
   box-shadow: 0 0 5px 5px gray;
-  width: 200px;
-  height: 200px;
-  top: 120px;
-  left: 80px;
   z-index: -1;
+  height: 200px;
+  width: 200px;
+}
+.barRotate{
+  transform: rotate(20deg);
+  transform-origin:0 0;
 }
 .posterRotate {
   animation: spin 30s linear infinite;
