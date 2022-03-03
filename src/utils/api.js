@@ -17,10 +17,14 @@ function getLyricById(musicId) {
 }
 
 function getSongDetail(musicId) {
+  let res=musicId;
+  if(musicId instanceof Array){
+    res=res.join(",");
+  }
   return request({
     url: '/song/detail',
     method: 'get',
-    params: { ids: musicId },
+    params: { ids: res },
   })
 }
 
@@ -46,18 +50,61 @@ function getBanner(){
     method:'get',
   });
 }
+function searchSong(queryInfo){
+  return request({
+    url:'/search',
+    method:'get',
+    params:queryInfo,
+  });
+}
 
 function getHotPlaylist({cat="华语",limit=50,offset=0}){
   //这里中文使用正常传参无效，改拼接url
   return request({
     url:`/top/playlist?cat=${cat}&limit=${limit}&offset=${offset}`,
-  })
+  });
 }
+
+function getSingerInfo(singerId){
+  return request({
+    url:'/artists',
+    method:'get',
+    params:{id:singerId},
+  });
+}
+//params{id:singerId}
+function getHotAlbum(params){
+  return request({
+    url:'/artist/ablum',
+    method:'get',
+    params,
+  });
+}
+function getAlbum(albumId){
+  return request({
+    url:'/album',
+    method:'get',
+    params:{id:albumId},
+  });
+}
+function getPlaylistDetail(playlistId){
+  return request({
+    url:'/playlist/detail',
+    method:"get",
+    params:{id:playlistId},
+  });
+}
+
 export {
+  searchSong,
   getSongById,
   getLyricById,
   getSongDetail,
   getTopSong,
   getBanner,
   getHotPlaylist,
+  getSingerInfo,
+  getHotAlbum,
+  getAlbum,
+  getPlaylistDetail,
 };

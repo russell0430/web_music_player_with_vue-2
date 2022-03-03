@@ -200,7 +200,10 @@ export default {
       console.log(item.targetId);
       // toSongDetail 进入详情页
       this.$router.push('/songdetail/'+item.targetId);
-
+    },
+    toSongListPage(id){
+      console.log(id);
+      this.$router.push("/songlist/"+id);
     }
   }
 };

@@ -2,7 +2,7 @@
   <div style="margin-top: 50px; margin-bottom: 75px">
     <!-- 头部热门50首 -->
     <el-row>
-      <el-col :span="4" >
+      <el-col :span="4">
         <el-image
           src="img/top50.png"
           style="width: 150px; height: 150px"
@@ -18,17 +18,20 @@
         </el-row>
       </el-col>
       <el-col :span="14" :offset="4">
-        <el-table :data="hot10Songs" style="width: 100%" stripe lazy>
-          <el-table-column label="#" type="index">
+        <el-table
+          :data="hot10Songs"
+          style="width: 100%"
+          stripe
+          @row-click="doubleClick"
+        >
+          <el-table-column lable="#" type="index" :span="1">
             <template scope="scope">
-              <img v-if="curId === scope.row.id" src="img/isPlay.png" alt="" />
-              <p v-else>
-                {{
-                  scope.$index + 1 >= 10
-                    ? scope.$index + 1
-                    : ("0" + (scope.$index + 1)).toString()
-                }}
-              </p>
+              <img
+                v-if="scope.row.id == curMusicId"
+                src="img/isPlay.png"
+                alt=""
+              />
+              <p v-else>{{ scope.$index + 1 }}</p>
             </template>
           </el-table-column>
           <el-table-column label="操作">
@@ -52,11 +55,11 @@
 </template>
 
 <script>
-import {getTopSong} from "../../utils/api.js"
+import { mapActions, mapMutations, mapState } from "vuex";
+import { getTopSong, getHotAlbum, getAlbum } from "../../utils/api.js";
 export default {
   data() {
     return {
-      curId: 0,
       queryInfo: {
         id: this.$route.params.id,
         limit: 4,
@@ -75,71 +78,90 @@ export default {
       albumMusicInfo: [],
     };
   },
+  computed: {
+    ...mapState(["curMusicId"]),
+  },
   created() {
-    console.log("singerAlbum");
+    // console.log("singerAlbum");
     this.singerId = this.$route.params.data;
-    this.getHot50Music();
+    this.setHot50Music();
+    // this.setHotAlbum();
     // console.log(this.hot50Songs);
   },
   methods: {
-    async getHot50Music() {
-      let res=await getTopSong(this.singerId,20);
-      this.hot50Songs=res.songs;
+    ...mapMutations(["setPlaylist", "changePlayStatus"]),
+    ...mapActions(["startPlaylist", "playMusicById"]),
+    async setHot50Music() {
+      let res = await getTopSong(this.singerId, 20);
+      this.hot50Songs = res.songs;
       this.hot50Songs.forEach((item) => {
-            const dt = new Date(item.dt);
-            const mm = (dt.getMinutes() + "").padStart(2, "0");
-            const ss = (dt.getSeconds() + "").padStart(2, "0");
-            item.dt = mm + ":" + ss;
-          });
+        const dt = new Date(item.dt);
+        const mm = (dt.getMinutes() + "").padStart(2, "0");
+        const ss = (dt.getSeconds() + "").padStart(2, "0");
+        item.dt = mm + ":" + ss;
+      });
       this.hot10Songs = this.hot50Songs.slice(0, 10);
     },
     changeDefaultNum() {
       //将show取消
       this.defaultShow = 50;
     },
-    async getHotAlbum() {
-      this.$axios
-        .get("/artist/album", { params: this.queryInfo, limit: 10 })
-        .then((res) => {
-          this.hotAlbum = res.data.hotAlbums;
+    async setHotAlbum() {
+      let albums = await getHotAlbum({ params: this.queryInfo, limit: 10 });
+      this.hotAlbum = albums.hotAlbums;
+      let tmp = this.hotAlbum.map(async (item) => await getAlbum(item.id));
+      console.log(tmp);
+      // this.$axios
+      //   .get("/artist/album", { params: this.queryInfo, limit: 10 })
+      //   .then((res) => {
+      //     this.hotAlbum = res.data.hotAlbums;
 
-          this.hotAlbum.forEach((item) => {
-            this.$axios
-              .get("/album", { params: { id: item.id } })
-              .then((res) => {
-                res.data.songs.forEach((item) => {
-                  const dt = new Date(item.dt);
-                  const mm = (dt.getMinutes() + "").padStart(2, "0");
-                  const ss = (dt.getSeconds() + "").padStart(2, "0");
+      //     this.hotAlbum.forEach((item) => {
+      //       this.$axios
+      //         .get("/album", { params: { id: item.id } })
+      //         .then((res) => {
+      //           res.data.songs.forEach((item) => {
+      //             const dt = new Date(item.dt);
+      //             const mm = (dt.getMinutes() + "").padStart(2, "0");
+      //             const ss = (dt.getSeconds() + "").padStart(2, "0");
 
-                  item.dt = mm + ":" + ss;
-                });
-                this.albumMusicInfo.push(res.data);
-              });
-          });
-          //处理时长数据
-          this.hotAlbum.forEach((item) => {
-            const dt = new Date(item.dt);
-            const mm = (dt.getMinutes() + "").padStart(2, "0");
-            const ss = (dt.getSeconds() + "").padStart(2, "0");
+      //             item.dt = mm + ":" + ss;
+      //           });
+      //           this.albumMusicInfo.push(res.data);
+      //         });
+      //     });
+      //     //处理时长数据
+      //     this.hotAlbum.forEach((item) => {
+      //       const dt = new Date(item.dt);
+      //       const mm = (dt.getMinutes() + "").padStart(2, "0");
+      //       const ss = (dt.getSeconds() + "").padStart(2, "0");
 
-            item.dt = mm + ":" + ss;
-          });
-        });
+      //       item.dt = mm + ":" + ss;
+      //     });
+      //   });
     },
-
+    onclick() {
+      console.log(1);
+    },
+    doubleClick(row, col, event) {
+      // console.log("click");
+      console.log(row.id, col);
+      this.playMusicById({ id: row.id });
+    },
     handleCurrentChange(newpage) {
       this.queryInfo.offset = (newpage - 1) * this.queryInfo.limit;
-      this.getHotAlbum();
+      this.setHotAlbum();
     },
     //播放top50歌曲,数组传值,只传送歌曲id
     playHot50Music(row) {
-      let playList = this.hot50Songs.map((item) => item.id);
-      this.$emit("setSongListInfo", playList);
+      let playlist = this.hot50Songs.map((item) => item.id);
+      // console.log(playlist);
+      this.setPlaylist(playlist);
+      this.startPlaylist();
     },
     playAlbumMusic(row) {
       console.log(this.albumMusicInfo);
-      
+
       // this.$emit(
       //   "setSongListInfo",
       //   window.localStorage.getItem("playList"),

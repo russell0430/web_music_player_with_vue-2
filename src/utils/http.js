@@ -12,12 +12,11 @@ http.interceptors.request.use(config => {
 });
 http.interceptors.response.use(response => {
   const res = response.data;
-  // console.log(res);
+  // console.log(response);
   if (res.code!==200) {
-    return Promise.reject({
-      code: res.errorCode,
-      msg: res.txtMessage,
-    })
+    // console.log(res);
+    // let resObject=eval(res.data);
+    return Promise.reject(res);
   } else {
     return res;
   }

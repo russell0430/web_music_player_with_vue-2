@@ -29,8 +29,8 @@
       style="display: block; width: 20%; margin: 15px auto"
       layout="prev,pager,next"
       :page-size="queryInfo.limit"
-      :total="playListTotal"
-      @current-change="handleCurrentchange"
+      :total="playListCount"
+      @current-change="handleCurrentChange"
     >
     </el-pagination>
   </div>
@@ -40,7 +40,7 @@
 export default {
   data(){
     return {
-      searchData:decodeURIComponent(this.$route.params.data),
+      searchData:this.$route.params.data,
       queryInfo:{
         keywords:this.$route.params.data,
         limit:12,
@@ -48,6 +48,7 @@ export default {
         type:1000,
       },
       playList:[],
+      playListCount:0,
     }
   },
   created(){
@@ -57,7 +58,7 @@ export default {
     getPlayListResult(){
       this.$axios.get('/search',{params:this.queryInfo}).then(res=>{
         this.playList=res.data.result.playlists;
-        this.playListTotal=res.data.result.playlistCount
+        this.playListCount=res.data.result.playlistCount
       });
     },
     handleCurrentChange(newpage){

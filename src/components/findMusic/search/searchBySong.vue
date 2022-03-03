@@ -12,7 +12,7 @@
       >
       <el-table-column lable="#" type="index" :span="1">
         <template scope="scope">
-          <img v-if="scope.row.id === curId" src="img/isPlay.png" alt="" />
+          <img v-if="scope.row.id == curMusicId" src="img/isPlay.png" alt="" />
           <p v-else>{{ scope.$index + 1 }}</p>
         </template>
       </el-table-column>
@@ -41,7 +41,7 @@
         prop="album.name"
         :span="2"
       ></el-table-column>
-      <el-table-column label="时长" prop="druation" :span="1"></el-table-column>
+      <el-table-column label="时长" prop="duration" :span="1"></el-table-column>
     </el-table>
 
     <!-- 分页 -->
@@ -55,6 +55,8 @@
 </template>
 
 <script>
+import{mapState,mapActions} from "vuex"
+import { searchSong } from "../../../utils/api.js";
 export default {
   data() {
     return {
@@ -71,12 +73,15 @@ export default {
       },
       songTotal: 0,
       songList: [],
-      curId: parseInt(window.localStorage.getItem("curPlayMusicId")),
     };
   },
-  beforeRouteEnter(from,to,next) {
+  computed: {
+    ...mapState(["curMusicId"]),
+  },
+  //
+  beforeRouteEnter(from, to, next) {
     //这里读不到this,使用下面的vm
-    next(vm=>vm.getSearchResult());
+    next((vm) => vm.getSearchResult());
     console.log("router");
   },
   // beforeRouteUpdate(from,to,next){
@@ -86,52 +91,49 @@ export default {
   // },
   created() {
     //不能在这里开,因为出来再进去就不会执行
-    // this.getSearchResult();
+    this.getSearchResult();
     // console.log("created");
     // console.log(this.$route.params.data);
   },
   methods: {
     async getSearchResult() {
-      this.$axios
-        .get("/search", {
-          params: this.queryInfo,
-        })
-        .then((res) => {
-          console.log(res);
-          this.songList = res.data.result.songs;
-          this.songTotal = res.data.result.songCount;
-          // console.log(this.songList);
-
-          // 这里可以使用过滤器
-          this.songList.forEach((item) => {
-            var time = item.duration / 1000;
-            //分钟
-            var minute = time / 60;
-            var minutes = parseInt(minute);
-            if (minutes < 10) {
-              minutes = "0" + minutes;
-            }
-            //秒
-            var second = time % 60;
-            var seconds = Math.round(second);
-            if (seconds < 10) {
-              seconds = "0" + seconds;
-            }
-            item.duration = `${minutes}:${seconds}`;
-          });
-        });
+      let {result:searchResult} = await searchSong(this.queryInfo);
+      //
+      console.log(searchResult);
+      this.songList = searchResult.songs;
+      this.songTotal = searchResult.songCount;
+      //这里可以抽出去
+      this.songList.forEach((item) => {
+        var time = item.duration / 1000;
+        //分钟
+        var minute = time / 60;
+        var minutes = parseInt(minute);
+        if (minutes < 10) {
+          minutes = "0" + minutes;
+        }
+        //秒
+        var second = time % 60;
+        var seconds = Math.round(second);
+        if (seconds < 10) {
+          seconds = "0" + seconds;
+        }
+        item.duration = `${minutes}:${seconds}`;
+      });
     },
     playMusic(row, col, event) {
       // console.log(row,col,event);
-      this.curId = row.id;
-      console.log(this.$parent.$parent.$parent);
-      this.$parent.$parent.$parent.setMusicUrl(this.curId);
-      this.$router.push("/songdetail/" + row.id);
+      //musicId=> row.id;
+      // this.playMusicById({id:row.id});
+      this.$router.push({path:"/songdetail/" + row.id}, onComplete => { }, onAbort => { });
+      
 
       // console.log(this.$parent,"已发送")
     },
     handleCurrentChange(e) {},
     toSingerPage() {},
+    ...mapActions([
+      'playMusicById',
+    ])
   },
 };
 </script>

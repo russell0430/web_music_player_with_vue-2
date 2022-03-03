@@ -8,12 +8,15 @@
             </el-menu>
         </el-header>
     <el-main>
-      <router-view ref="child" @setMusicUrl="setMusicUrl"></router-view>
+      <keep-alive>
+        <router-view ref="child" ></router-view>
+      </keep-alive>
     </el-main>
   </el-container>
 </template>
 
 <script>
+import {mapMutations} from"vuex"
 export default {
   data(){
     return {
@@ -23,18 +26,12 @@ export default {
   created(){
     this.toSingSearchPage();
   },
-  methods:{
+  methods:
+  {
     toSingSearchPage(){
       this.searchData=this.$route.params.data;
-      const href=location.href;
-      if(href.substring(href.indexOf('#/')+1,href.length)==='/search/'+encodeURIComponent(this.$route.params.data)){
-        this.$router.push('/searchBySong/' + decodeURIComponent(this.$route.params.data));
-      }
+
     },
-    setMusicUrl(url,detail){
-      this.$emit('setMusicUrl',url,detail);
-      console.log("page emit")
-    }
   }
 }
 </script>

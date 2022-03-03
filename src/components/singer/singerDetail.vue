@@ -68,6 +68,7 @@
 </template>
 
 <script>
+import {getSingerInfo} from "../../utils/api"
 export default {
   data() {
     return {
@@ -80,15 +81,18 @@ export default {
     };
   },
   created() {
-    this.getSingerInfo();
+    this.setSingerInfo();
   },
   methods: {
-    getSingerInfo() {
-      this.$axios
-        .get("/artists", { params: { id: this.singerId } })
-        .then((res) => {
-          this.singerInfo = res.data;
-        })
+    async setSingerInfo() {
+      let res;
+      try {
+        res=await getSingerInfo(this.singerId);
+      }catch(err){
+        console.log(err);
+      }finally{
+        this.singerInfo=res;
+      }
     },
     setSongListInfo(playList) {
       this.$emit("setSongListInfo", playList);

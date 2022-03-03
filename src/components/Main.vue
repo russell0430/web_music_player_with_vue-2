@@ -20,20 +20,11 @@
         ></el-button>
       </el-input>
       <!-- 右侧登录区域 -->
-      <div class="rightContainer" style="display: flex">
+      <div class="rightContainer" @click="test" style="display: flex">
         <!-- 短路表达式 -->
-        <img
-          :src="currentInfo.avatarUrl || 'img/userIcon.png'"
-          class="userIcon"
-          alt="this is avatar"
-        />
-        <span
-          v-if="currentUserInfo === null"
-          style="cursor: pointer"
-          @click="handLogin"
-          >未登录</span
-        >
-        <span v-else>{{ currentUserInfo.nickname }}</span>
+        <!-- <img src="'img/userIcon.png'" class="userIcon" alt="this is avatar" /> -->
+        <span v-if="true" style="cursor: pointer">未登录</span>
+        <!-- <span v-else>{{ currentUserInfo.nickname }}</span>
         <el-button
           type="danger"
           @click="logout"
@@ -41,12 +32,13 @@
           size="mini"
           style="height: 50%; margin-top: 10px; margin-left: 5px"
           >退出</el-button
-        >
+        > -->
       </div>
     </el-header>
     <!-- 主体 -->
     <el-container>
-      <el-aside width="210px">
+      <el-aside width="210px" style="margin-top:20px;">
+        <el-button icon="el-icon-back" @click="routerback"></el-button>
         <el-menu default-active="/findMusic" :router="true">
           <el-menu-item-group>
             <template slot="title">推荐</template>
@@ -61,29 +53,22 @@
 
           <el-menu-item-group>
             <template slot="title">创建歌单</template>
-            <el-menu-item
+            <!-- <el-menu-item
               index
               :index="'/songlist/' + item.id"
               @click="changePlaylistId(item.id)"
               v-for="item in currentUserPlayList"
               v-if="!item.subscribed"
               >{{ item.name }}
-            </el-menu-item>
+            </el-menu-item> -->
           </el-menu-item-group>
         </el-menu>
       </el-aside>
 
       <el-container>
-        <el-main>
-          <router-view
-            ref="child"
-            @setMusicById="setMusic"
-            :musicDuration="musicDuration"
-            @refreshprivatePlaylist="getUserPrivateList"
-            :isPlay="isPlay"
-            :curId="curId"
-            @setSongListInfo="setSongListInfo"
-          ></router-view>
+        <el-main style="margin-top: 15px">
+          
+            <router-view ref="child"></router-view>
         </el-main>
       </el-container>
     </el-container>
@@ -127,13 +112,13 @@
           <img
             src="img/prev.png"
             alt="prev"
-            @click="changePrevMusic"
+            @click="toPrevSong"
             style="border-radius: 100%; cursor: pointer"
           />
           <img
             :src="isPlay ? 'img/pauseMusic.png' : 'img/playMusic.png'"
             alt="pause"
-            @click="playMusic"
+            @click="onClickPlayBtn"
             style="
               border-radius: 50%;
               cursor: pointer;
@@ -145,28 +130,28 @@
           <img
             src="img/next.png"
             alt="next"
-            @click="changeNextMusic"
+            @click="toNextSong"
             style="border-radius: 100%; cursor: pointer; margin-left: 25px"
           />
         </el-col>
         <el-col :span="15" :offset="1">
           <span style="position: absolute; top: 9px">{{
-            this.musicDuration | timeFormat
+            currentMusicPlayDuration | timeFormat
           }}</span>
           <el-slider
-            v-model="musicDuration"
-            :max="totalDuration"
+            v-model="localCurrentDuration"
+            :max="currentMusicTotalDuration"
             @change="musicDurationChange"
             :show-tooltip="false"
           ></el-slider>
           <span style="position: absolute; left: 73%; top: 9px">{{
-            totalDuration | timeFormat
+            currentMusicTotalDuration | timeFormat
           }}</span>
         </el-col>
         <el-col :span="5">
           <!-- volume -->
           <img
-            :src="musicVolume === 0 ? 'img/shutUp.png' : 'img/laba.png'"
+            :src="volume === 0 ? 'img/shutUp.png' : 'img/laba.png'"
             alt="volume"
             @click="silence"
             class="volume"
@@ -178,18 +163,20 @@
             style="position: absolute; top: -30px; right: 5%; cursor: pointer"
           />
           <el-slider
-            v-model="musicVolume"
+            v-model="localVolume"
             :show-tooltip="false"
             style="width: 30%"
-            @change="musicVolumeChange"
+            @change="volumeChange"
           ></el-slider>
         </el-col>
       </el-row>
       <audio
-        :src="musicUrl"
+        :src="curMusicUrl"
+        @ended="toNextSong"
         ref="audio"
+        @timeupdate="updateDuration"
+        :currentTime="currentMusicPlayDuration"
         autoplay
-        class="playMusicAudio"
       ></audio>
     </el-footer>
     <el-dialog
@@ -225,18 +212,42 @@
 
 <script>
 import searchPage from "./findMusic/search/searchPage";
-import {getSongById} from "../utils/api.js"
+import { getSongById } from "../utils/api.js";
+import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
 export default {
   name: "Main",
-  props: {
-    msg: String,
+  computed: {
+    ...mapState([
+      "isPlay",
+      "curMusicId",
+      "curMusicUrl",
+      "currentMusicPlayDuration",
+      "currentMusicTotalDuration",
+      "albumId",
+      "volume",
+    ]),
+    ...mapGetters(["playMode", "playingMusicInfo"]),
+    musicUrl() {
+      return this.$store.state.curMusicUrl;
+    },
+  },
+  watch: {
+    // isPlay(newVal) {
+    //   // this.audio.url=this.curMusicUrl;
+    //   // console.log(newVal,this.audio.url,this.curMusicUrl);
+    //   if (this.curMusicUrl === "") return;
+    //   if (newVal)
+    //     try{this.audio.play();}
+    //     catch(err){console.log(err);}
+    //   else this.audio.pause();
+    // },
   },
   data() {
     return {
       //当前音乐链接
       audio: null,
-      musicUrl: "",
-      //当前音乐详情
+      localVolume: 20, //给v-model绑着的,要不change无法正常触发
+      localCurrentDuration: 0,
       music: {
         name: "",
         al: {
@@ -248,58 +259,38 @@ export default {
           },
         ],
       },
-      musicinfo: null,
-      // 当前音乐进度条
-      musicDuration: 0,
-      totalDuration: 0,
       //音量
-      musicVolume: 20,
-      // 当前音乐编号
-      curId: 0,
-      currentReadyId:-1,
-      // 默认是否播放
-      isPlay: false,
-      playListInfo:
-        (window.localStorage.getItem("playList") &&
-          window.localStorage.getItem("playList").split(",")) ||
-        [],
-      //当前播放的歌单的id
       songListInfo: [],
       //展示右边鹅蛋的对话框
       showCurrentPlayDialog: false,
-      //登录对话框
-      loginDailogVisible: false,
-      loginInfo: {},
-      //当前用户歌单
-      currentMusicIndex:-1,//当前播放音乐在playlist中位置
-      currentUserPlayList: [], //id
-      //当前播放歌单的所有歌曲url和其他信息
       currentMusicListInfo: [],
       //搜索关键字
       searchData: "",
-      currentInfo: "",
-      currentUserInfo: "",
+      //记录静音前的音量
+      lastvolume: 20,
     };
-  },
-  watch: {
-    // curId(newVal) {
-    //   // this.resetItem("curPlayMusicId", newVal);
-    // },
-  },
-  created() {
-    this.testAxios();
-    if (false) {
-      this.getUserPrivatePlayList();
-    }
   },
   mounted() {
     this.audio = this.$refs.audio;
+    this.volumeChange(this.volume);
     // console.log(this.audio);
   },
   methods: {
-    setMusic(musicId){
-      this.currentReadyId=musicId;
-      this.setMusicById(musicId);
+    ...mapMutations([
+      "changePlayStatus",
+      "setCurrentMusicDuration",
+      "setVolume",
+      "setCurrentMusicTotalDuration",
+    ]),
+    ...mapActions([
+      "toNextSong",
+      "toPrevSong",
+      "playMusicById",
+      "setPlaylistById",
+    ]),
+    test() {
+      this.audioVolume = 0;
+      console.log(this.curMusicId);
     },
     /*
     param@ musicInfo{
@@ -308,92 +299,50 @@ export default {
     }
     设置单个音乐url
     */
-
-    async setMusicById(musicId) {
-      this.curId = musicId;
-      console.log("main",this.curId);
-      //当前用户音乐列表只存id
-      // this.currentUserPlayList.push(this.curId);
-      let response=await getSongById(musicId);
-      // console.log(res.data.result);
-      this.setAudioTagsInfo(response.data[0].url);
+    musicDurationChange(num) {
+      this.changePlayStatus(false);
+      console.log(num);
+      // let tmp=this.audio.ontimeupdate;
+      // console.log(tmp);
+      // this.audio.ontimeupdate=null;
+      this.setCurrentMusicDuration(num);
+      this.audio.currentTime = num;
+      // this.audio.ontimeupdate=tmp;
+      this.changePlayStatus(true);
     },
-    setAudioTagsInfo(musicUrl) {
-      console.log(musicUrl);
-      if (this.audio === null) this.$message("error(Can not find audio)");
-      this.musicUrl = musicUrl;
-      this.audio.addEventListener("timeupdate", () => {
-        this.totalDuration = this.audio.duration;
-        this.musicDuration = this.audio.currentTime;
-        if (this.audio.currentTime >= this.audio.duration) {
-          this.changeNextMusic();
-        }
-      });
-      //设置url后,自动播放,所以直接置为true
-      this.isPlay = true;
+    volumeChange(num) {
+      console.log(num);
+      this.setVolume(num);
+      this.localVolume = num;
+      this.audio.volume = num / 100;
     },
-    /*
-    params:@ playList Array
-    params:@ albumId number
-    */
-    async setSongListInfo(playList) {
-      console.log(playList);
-      this.currentMusicIndex=0;
-      this.currentUserPlayList = playList;
-      let res=await getSongById(this.currentUserPlayList);
-      this.currentMusicListInfo = res.data;
-      this.setAudioTagsInfo(this.currentMusicListInfo[0].url);
-    },
-    musicDurationChange() {
-      if (this.totalDuration === 0) return;
-      this.audio.currentTime = this.musicDuration;
-    },
-    musicVolumeChange() {
-      this.volumeChange(this.musicVolume / 100);
-    },
-    volumeChange(sum) {
-      this.audio.volume = sum;
-    },
-    //这里可以改计算属性
     silence() {
-      if (this.musicVolume !== 0) {
+      if (this.volume !== 0) {
+        this.lastvolume = this.volume;
         this.volumeChange(0);
-        this.musicVolume = 0;
       } else {
-        this.volumeChange(0.2);
-        this.musicVolume = 20;
+        this.volumeChange(this.lastvolume);
       }
+      console.log("audio volume", this.audio.volume);
     },
-    playMusic() {
-      if(this.currentReadyId){
-        this.setMusicById(this.currentReadyId);
-        this.currentReadyId=0;
-        return ;
-      }
-      if (this.musicUrl !== "") {
-        if (this.audio.paused) {
+    updateDuration(e) {
+      if (!this.isPlay) return;
+      let currentTime = e.target.currentTime;
+      this.setCurrentMusicDuration(currentTime);
+      this.setCurrentMusicTotalDuration(e.target.duration);
+      console.log(this.currentMusicPlayDuration);
+      this.localCurrentDuration = currentTime;
+    },
+    onClickPlayBtn() {
+      try {
+        this.changePlayStatus();
+        if (this.isPlay) {
           this.audio.play();
-        } else {
-          this.audio.pause();
-        }
-        this.isPlay = !this.isPlay;
+        } else this.audio.pause();
+        console.log(this.isPlay);
+      } catch (err) {
+        console.log(err);
       }
-    },
-    changeNextMusic() {
-      // this.isPlay=false;
-      if(this.currentMusicListInfo.length===0) return ;
-      this.currentMusicIndex=(this.currentMusicIndex+1)%this.currentMusicListInfo.length;
-      // console.log(this.currentMusicListInfo);
-      this.setAudioTagsInfo(this.currentMusicListInfo[this.currentMusicIndex].url);
-      this.curId=this.currentMusicListInfo[this.currentMusicIndex].id;
-      console.log("next music");
-    },
-    changePrevMusic() {
-      this.currentMusicIndex=(this.currentMusicIndex+this.currentMusicListInfo.length-1)%this.currentMusicListInfo.length;
-      console.log(this.currentMusicListInfo);
-      this.setAudioTagsInfo(this.currentMusicListInfo[this.currentMusicIndex].url);
-      this.curId=this.currentMusicListInfo[this.currentMusicIndex].id;
-      console.log("last music");
     },
     //获得searchData,使用$router去搜索页
     toSearchPage() {
@@ -403,11 +352,13 @@ export default {
       }
       console.log(this.searchData);
       this.$router.push("/search/" + encodeURIComponent(this.searchData));
-      this.$refs.childe&&this.$refs.child.toSingSearchPage();
-      console.log("goto");
+      // this.$refs.childe && this.$refs.child.toSingSearchPage();
+    },
+    routerback(){
+      this.$router.go(-1);
     },
     async testAxios() {
-      let res=await getSongById(1920784999);
+      let res = await getSongById(1920784999);
       console.log(res);
     },
     logout() {},

@@ -6,7 +6,7 @@ import './assets/css/global.css'
 import "./plugins/element_ui"
 import axios from "axios"
 
-
+import store from './store/index'
 Vue.config.productionTip = false
 
 Vue.prototype.$axios=axios
@@ -97,6 +97,6 @@ Vue.prototype.resetSetItem = function (key, newVal) {
 
 new Vue({
   router,
-  // store,
+  store,
   render: h => h(App)
 }).$mount('#app')
