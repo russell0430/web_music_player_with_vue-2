@@ -15,6 +15,7 @@ let state = {
   albumId: 0,
   currentMusicIndex: 0,
   currentPlaylist: [],
+  currentPlayMusicInfo:[],
   currentMusicInfo: {},
   playModeIndex: 0,
   playModeArray: ['single', 'loop', 'single-loop'],

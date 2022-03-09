@@ -37,12 +37,11 @@
     </el-header>
     <!-- 主体 -->
     <el-container>
-      <el-aside width="210px" style="margin-top:20px;">
-        <el-button icon="el-icon-back" @click="routerback"></el-button>
+      <el-aside width="210px" style="margin-top: 20px">
         <el-menu default-active="/findMusic" :router="true">
           <el-menu-item-group>
             <template slot="title">推荐</template>
-            <el-menu-item index="">发现音乐</el-menu-item>
+            <el-menu-item index="/">发现音乐</el-menu-item>
             <el-menu-item index> 视频(假装有)</el-menu-item>
           </el-menu-item-group>
 
@@ -65,10 +64,9 @@
         </el-menu>
       </el-aside>
 
-      <el-container>
+      <el-container style="overflow: auto; margin-bottom: 200px">
         <el-main style="margin-top: 15px">
-          
-            <router-view ref="child"></router-view>
+          <router-view ref="child"></router-view>
         </el-main>
       </el-container>
     </el-container>
@@ -79,97 +77,115 @@
         bottom: 0;
         width: 100%;
         z-index: 100;
-        height: 150px;
+        height: 80px;
+        display: flex;
+        background: white;
       "
     >
-      <el-row style="width: 209px; background-color: white">
-        <el-col :span="8">
-          <img
-            src="img/phone.png"
+      <div
+        style="
+          flex: 1 0 80px;
+          margin-top: 10px;
+          border-top: 1px solid rgb(230, 230, 230);
+          background-color: white;
+          display: flex;
+          justify-content: space-around;
+          align-item: center;
+        "
+      >
+        <div style="margin: auto">
+          <el-image
+            :src="music.al.picUrl"
             @click="tomusicDetailPage"
             alt="musiccover"
             style="width: 60px; height: 63px; cursor: pointer"
-          />
-        </el-col>
-        <el-col :span="16">
+          ></el-image>
+        </div>
+        <div
+          style="
+            width: 150px;
+            padding-right: 20px;
+            border-right: 1px solid black;
+          "
+        >
           <p style="height: 8px; font-size: 10px">{{ music.name }}</p>
           <br />
           <span style="color: gray; font-size: 10px">{{
             music.ar[0].name
           }}</span>
-        </el-col>
-      </el-row>
-
-      <el-row
+        </div>
+      </div>
+      <div style="flex: 1 0 200px; margin: auto">
+        <!-- ← -->
+        <img
+          src="img/prev.png"
+          alt="prev"
+          @click="toPrevSong"
+          style="border-radius: 100%; cursor: pointer"
+        />
+        <img
+          :src="isPlay ? 'img/pauseMusic.png' : 'img/playMusic.png'"
+          alt="pause"
+          @click="onClickPlayBtn"
+          style="
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: 25px;
+            width: 40px;
+            height: 40px;
+          "
+        />
+        <img
+          src="img/next.png"
+          alt="next"
+          @click="toNextSong"
+          style="border-radius: 100%; cursor: pointer; margin-left: 25px"
+        />
+      </div>
+      <div
         style="
-          margin-top: 10px;
-          border-top: 1px solid rgb(230, 230, 230);
-          background-color: white;
+          flex: 5 1 700px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         "
       >
-        <el-col :span="2.5">
-          <!-- ← -->
-          <img
-            src="img/prev.png"
-            alt="prev"
-            @click="toPrevSong"
-            style="border-radius: 100%; cursor: pointer"
-          />
-          <img
-            :src="isPlay ? 'img/pauseMusic.png' : 'img/playMusic.png'"
-            alt="pause"
-            @click="onClickPlayBtn"
-            style="
-              border-radius: 50%;
-              cursor: pointer;
-              margin-left: 25px;
-              width: 40px;
-              height: 40px;
-            "
-          />
-          <img
-            src="img/next.png"
-            alt="next"
-            @click="toNextSong"
-            style="border-radius: 100%; cursor: pointer; margin-left: 25px"
-          />
-        </el-col>
-        <el-col :span="15" :offset="1">
-          <span style="position: absolute; top: 9px">{{
+        <span>
+          <span style="display: inline">{{
             currentMusicPlayDuration | timeFormat
           }}</span>
-          <el-slider
-            v-model="localCurrentDuration"
-            :max="currentMusicTotalDuration"
-            @change="musicDurationChange"
-            :show-tooltip="false"
-          ></el-slider>
-          <span style="position: absolute; left: 73%; top: 9px">{{
+          <br />
+          <span style="display: inline">{{
             currentMusicTotalDuration | timeFormat
           }}</span>
-        </el-col>
-        <el-col :span="5">
-          <!-- volume -->
-          <img
-            :src="volume === 0 ? 'img/shutUp.png' : 'img/laba.png'"
-            alt="volume"
-            @click="silence"
-            class="volume"
-          />
-          <img
-            src="img/songList.png"
-            alt="listpic"
-            @click="showCurrentPlayList"
-            style="position: absolute; top: -30px; right: 5%; cursor: pointer"
-          />
-          <el-slider
-            v-model="localVolume"
-            :show-tooltip="false"
-            style="width: 30%"
-            @change="volumeChange"
-          ></el-slider>
-        </el-col>
-      </el-row>
+        </span>
+        <el-slider
+          v-model="localCurrentDuration"
+          :max="currentMusicTotalDuration"
+          @change="musicDurationChange"
+          :show-tooltip="false"
+        ></el-slider>
+      </div>
+      <div style="flex: 1 0 200px; display: flex; align-items: center">
+        <!-- volume -->
+        <img
+          :src="volume === 0 ? 'img/shutUp.png' : 'img/laba.png'"
+          alt="volume"
+          @click="silence"
+          class="volume"
+        />
+        <img
+          src="img/songList.png"
+          alt="listpic"
+          @click="showCurrentPlayList"
+          style="position: absolute; top: -30px; right: 5%; cursor: pointer"
+        />
+        <el-slider
+          v-model="localVolume"
+          style="width: 30%"
+          @change="volumeChange"
+        ></el-slider>
+      </div>
       <audio
         :src="curMusicUrl"
         @ended="toNextSong"
@@ -185,14 +201,14 @@
       :visible.sync="showCurrentPlayDialog"
       width="30%"
       center
-    >
+    >待完成
       <el-table
-        :data="currentMusicListInfo"
         ref="playTable"
         highlight-current-row
         border
         strip
         style="cursor: context-menu"
+        :data="currentPlaylist"
       >
         <el-table-column label="#" type="index">
           <template scope="scope">
@@ -201,7 +217,7 @@
           </template>
         </el-table-column>
         <el-table-column v-if="false" label="id" prop="id"></el-table-column>
-        <el-table-column label="音乐标题" prop="name"></el-table-column>
+        <el-table-column label="音乐标题" prop="id"></el-table-column>
         <el-table-column label="歌手" prop="ar[0].name"></el-table-column>
         <el-table-column label="专辑名" prop="al.name"></el-table-column>
         <el-table-column label="时长" prop="dt" width="80px"></el-table-column>
@@ -212,7 +228,7 @@
 
 <script>
 import searchPage from "./findMusic/search/searchPage";
-import { getSongById } from "../utils/api.js";
+import { getSongById, getSongDetail } from "../utils/api.js";
 import { mapState, mapGetters, mapMutations, mapActions } from "vuex";
 export default {
   name: "Main",
@@ -225,6 +241,7 @@ export default {
       "currentMusicTotalDuration",
       "albumId",
       "volume",
+      "currentPlaylist",
     ]),
     ...mapGetters(["playMode", "playingMusicInfo"]),
     musicUrl() {
@@ -241,6 +258,13 @@ export default {
     //     catch(err){console.log(err);}
     //   else this.audio.pause();
     // },
+
+    //监视切换歌曲也可以加到vuex里
+    async curMusicId(newVal, oldVal) {
+      if (oldVal === newVal) return;
+      this.music = (await getSongDetail(newVal)).songs[0];
+      console.log(this.music.al);
+    },
   },
   data() {
     return {
@@ -354,7 +378,7 @@ export default {
       this.$router.push("/search/" + encodeURIComponent(this.searchData));
       // this.$refs.childe && this.$refs.child.toSingSearchPage();
     },
-    routerback(){
+    routerback() {
       this.$router.go(-1);
     },
     async testAxios() {
@@ -364,8 +388,16 @@ export default {
     logout() {},
     getUserPrivateList() {},
 
-    tomusicDetailPage() {},
-    showCurrentPlayList() {},
+    tomusicDetailPage() {
+      console.log(this.$route);
+      let targetPath = `/songdetail/${this.curMusicId}`;
+      if (this.$route.path === targetPath) return;
+      console.log(targetPath);
+      this.$router.push(targetPath);
+    },
+    showCurrentPlayList() {
+      this.showCurrentPlayDialog=true;
+    },
   },
 };
 </script>

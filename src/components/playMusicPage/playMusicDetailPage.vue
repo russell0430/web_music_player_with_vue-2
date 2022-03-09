@@ -30,7 +30,7 @@
             {{ music.al.name }}</span
           ></span
         >
-        <br>
+        <br />
         <span>
           歌手:
           <span
@@ -48,7 +48,12 @@
             margin-top: 25px;
           "
         >
-          <div style="overflow-y: auto">
+          <div
+            style="
+              overflow-y: auto;
+              box-shadow: 0 60px linear-gradient(to top, transparent, white);
+            "
+          >
             <ul ref="lyric">
               <li
                 v-for="(item, i) in lyricObejct.ms"
@@ -112,6 +117,7 @@ export default {
       },
       commentList: [],
       total: 0,
+      lastlyricTop:0,
     };
   },
   computed: {
@@ -132,7 +138,7 @@ export default {
   beforeRouteEnter(to, from, next) {
     // console.log("enter");
     console.log(to.params.data);
-    next(async vm=>{
+    next(async (vm) => {
       await vm.updatePage(to.params.data);
     });
   },
@@ -144,7 +150,7 @@ export default {
       //对每次进来的进度条进行判断
       // 跟下一句台词时长是否匹配,如果匹配则当前高亮的索引值+1
       //使用循环帮助****回退  快进****的判断
-      let lrcArray = this.lyricObejct.ms||[];
+      let lrcArray = this.lyricObejct.ms || [];
       for (let i = 0; i < lrcArray.length; i++) {
         //这里使用小于符号判断是为了 保证回退音乐进度事件的效果实现性
         if (newVal <= parseFloat(lrcArray[i].time)) {
@@ -173,7 +179,17 @@ export default {
              */
             currentTemp = (i - 5) * -35;
             //设置样式
-            this.$refs.lyric.style.marginTop = currentTemp + "px";
+            let gradient=currentTemp-this.lastlyricTop;
+            this.animate({
+              delay: 10,
+              duration: 1000, // 1 sec by default
+              delta: (p)=>p,
+              step:  (delta)=> {
+                this.$refs.lyric.style.marginTop = this.lastlyricTop+ gradient* delta + "px";
+              },
+              next:()=>{this.lastlyricTop=currentTemp},
+            });
+            
           }
           //如果当前是最后一句歌词 代表歌曲要放送结束了 将我们的lyricIndex(当前歌词索引值还原成0便于下一曲使用)
           if (this.lyricIndex === lrcArray.length - 1) {
@@ -188,11 +204,22 @@ export default {
     ...mapActions(["playMusicById"]),
     async updatePage(pageId) {
       // console.log("update",pageId);
-      this.pageId=pageId;
-      await this.playMusicById({ id:pageId });
+      this.pageId = pageId;
+      await this.playMusicById({ id: pageId });
       await this.getMusicLrc();
       await this.getMusicDetail();
       // console.log(this.music.name);
+    },
+    animate(opts) {
+      var start = new Date();
+      var id = setInterval(function () {
+        var timePassed = new Date() - start;
+        var progress = timePassed / opts.duration;
+        if (progress > 1) progress = 1;
+        var delta = opts.delta(progress);
+        opts.step(delta);
+        if (progress == 1) {clearInterval(id);opts.next()};
+      }, opts.delay || 10);
     },
     async getMusicDetail() {
       let res = await getSongDetail(this.pageId);
